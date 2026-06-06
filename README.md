@@ -104,6 +104,45 @@ connect the repo to Cloudflare Pages for automatic deploys on push.
 Until a publisher ID is set, ad slots render as neutral placeholders so the
 layout doesn't shift during development.
 
+## Deploying via GitHub (Cloudflare Pages)
+
+Connect the repo to Cloudflare Pages for automatic deploys on every push to
+`main`:
+
+1. **Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git**
+   and select this repository.
+2. **Build settings:**
+   - Production branch: `main`
+   - Framework preset: `Astro`
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+3. **Bindings & vars** are read automatically from `wrangler.toml` (the D1 `DB`
+   binding, `PUBLIC_SITE_URL`, and the `nodejs_compat` flag) — no manual
+   dashboard config needed. Confirm `DB` appears under *Settings → Functions*
+   after the first build.
+4. **Create the tables once** via the D1 Console (dashboard → D1 → your
+   database → Console) or `npm run db:init:remote`. The site's shorten/redirect
+   features error until the schema exists.
+5. **Custom domain:** Pages project → *Custom domains* → add your domain.
+
+## Scaling: D1 vs KV
+
+This project uses **D1** for both link storage and click analytics. That's the
+right choice because the statistics page needs SQL aggregation (`GROUP BY` over
+dates, referrers, countries) — something KV (a plain key-value store) cannot
+do. D1 also gives atomic click counting and strong consistency, and easily
+handles tens of thousands of clicks per month.
+
+If you ever reach very high traffic (hundreds of thousands of redirects per
+day), the standard upgrade is a **hybrid**:
+
+- **KV** for the hot redirect lookup (`code → URL`) — globally edge-cached,
+  sub-millisecond reads. Safe because a code's destination never changes.
+- **D1** or **Workers Analytics Engine** for click data behind the stats page.
+
+The storage layer is isolated in `src/lib/db.ts`, so this migration touches a
+single file.
+
 ## API
 
 | Method | Endpoint            | Description                          |
