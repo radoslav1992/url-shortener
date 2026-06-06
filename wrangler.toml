@@ -14,7 +14,7 @@ database_id = "ef648fd8-d54c-400a-b66e-49ac1d644160"
 
 [vars]
 # Public site URL used for building short links and canonical/SEO tags.
-PUBLIC_SITE_URL = "https://your-domain.com"
+PUBLIC_SITE_URL = "https://shr7.org"
 # Your Google AdSense publisher ID, e.g. "ca-pub-1234567890123456".
 # Leave empty to disable ads (no AdSense script is injected when empty).
 PUBLIC_ADSENSE_CLIENT = ""
