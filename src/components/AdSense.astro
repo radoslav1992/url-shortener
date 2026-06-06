@@ -1,0 +1,51 @@
+---
+/**
+ * Google AdSense ad slot.
+ *
+ * The AdSense loader script is injected once in Layout.astro (only when a
+ * publisher ID is configured). This component renders an individual ad unit.
+ *
+ * Create ad units in your AdSense dashboard and pass the numeric slot id:
+ *   <AdSense slot="1234567890" />
+ *
+ * If no publisher ID is set (PUBLIC_ADSENSE_CLIENT empty) a neutral
+ * placeholder is shown instead, so layouts don't shift in development.
+ */
+interface Props {
+  slot?: string;
+  format?: string;
+  layout?: 'in-article' | 'in-feed' | '';
+  class?: string;
+}
+
+const { slot, format = 'auto', layout = '', class: className = '' } = Astro.props;
+const client = Astro.locals.runtime?.env?.PUBLIC_ADSENSE_CLIENT || import.meta.env.PUBLIC_ADSENSE_CLIENT || '';
+const enabled = Boolean(client && slot);
+---
+
+{
+  enabled ? (
+    <ins
+      class:list={['adsbygoogle block', className]}
+      style="display:block"
+      data-ad-client={client}
+      data-ad-slot={slot}
+      data-ad-format={format}
+      data-ad-layout={layout || undefined}
+      data-full-width-responsive="true"
+    />
+    <script is:inline>
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  ) : (
+    <div
+      class:list={[
+        'flex min-h-24 items-center justify-center rounded-xl border border-dashed border-line bg-cream-100 text-xs text-ink-muted',
+        className,
+      ]}
+      aria-hidden="true"
+    >
+      Advertisement
+    </div>
+  )
+}

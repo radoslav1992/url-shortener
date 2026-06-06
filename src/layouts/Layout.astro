@@ -1,0 +1,83 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+  ogImage?: string;
+}
+
+const {
+  title = 'Snip — Free URL Shortener with Click Analytics',
+  description = 'Shorten long links in one click and track real-time statistics. Fast, free, and privacy-friendly URL shortener built on Cloudflare.',
+  noindex = false,
+  ogImage,
+} = Astro.props;
+
+const siteUrl =
+  Astro.locals.runtime?.env?.PUBLIC_SITE_URL || import.meta.env.PUBLIC_SITE_URL || Astro.site?.toString() || Astro.url.origin;
+const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+const adsenseClient =
+  Astro.locals.runtime?.env?.PUBLIC_ADSENSE_CLIENT || import.meta.env.PUBLIC_ADSENSE_CLIENT || '';
+const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Open Graph / social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Snip" />
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    <meta name="twitter:card" content={ogImageUrl ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Structured data for richer search results -->
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Snip',
+        applicationCategory: 'UtilitiesApplication',
+        operatingSystem: 'Any',
+        url: siteUrl,
+        description,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      })}
+    />
+
+    {
+      adsenseClient && (
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+          crossorigin="anonymous"
+        />
+      )
+    }
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <Header />
+    <main class="mx-auto w-full max-w-5xl flex-1 px-5 py-10">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

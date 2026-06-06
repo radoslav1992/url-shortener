@@ -1,0 +1,172 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AdSense from '../components/AdSense.astro';
+
+export const prerender = false;
+---
+
+<Layout>
+  <section class="mx-auto max-w-2xl text-center">
+    <p class="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-ink-muted">
+      <span class="h-1.5 w-1.5 rounded-full bg-clay-400"></span>
+      Free · No sign-up · Built on Cloudflare
+    </p>
+    <h1 class="text-balance text-4xl font-semibold sm:text-5xl">
+      Shorten links.<br />Watch them work.
+    </h1>
+    <p class="mx-auto mt-4 max-w-xl text-balance text-lg text-ink-muted">
+      Turn long, unwieldy URLs into clean short links — then track every click
+      with real-time statistics.
+    </p>
+  </section>
+
+  <!-- Shortener form -->
+  <section class="mx-auto mt-10 max-w-2xl">
+    <form id="shorten-form" class="card flex flex-col gap-4">
+      <div>
+        <label for="url" class="mb-1.5 block text-sm font-medium text-ink-soft">
+          Long URL
+        </label>
+        <input
+          id="url"
+          name="url"
+          type="text"
+          inputmode="url"
+          autocomplete="off"
+          placeholder="https://example.com/a-very-long-link-to-shorten"
+          class="input"
+          required
+        />
+      </div>
+
+      <details class="group">
+        <summary class="cursor-pointer text-sm font-medium text-ink-muted hover:text-ink">
+          Custom alias (optional)
+        </summary>
+        <div class="mt-2 flex items-center gap-2">
+          <span class="text-sm text-ink-muted">/</span>
+          <input
+            id="alias"
+            name="alias"
+            type="text"
+            autocomplete="off"
+            placeholder="my-link"
+            class="input"
+            pattern="[A-Za-z0-9_-]{3,32}"
+          />
+        </div>
+      </details>
+
+      <button type="submit" id="submit-btn" class="btn-primary w-full">
+        Shorten URL
+      </button>
+
+      <p id="form-error" class="hidden text-sm text-clay-600" role="alert"></p>
+    </form>
+
+    <!-- Result -->
+    <div id="result" class="card mt-4 hidden">
+      <p class="mb-2 text-sm font-medium text-ink-muted">Your short link</p>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <a
+          id="result-link"
+          href="#"
+          target="_blank"
+          rel="noopener"
+          class="flex-1 truncate rounded-xl border border-line bg-cream-100 px-4 py-3 font-medium text-clay-500"
+        ></a>
+        <div class="flex gap-2">
+          <button id="copy-btn" type="button" class="btn-ghost">Copy</button>
+          <a id="stats-link" href="#" class="btn-ghost">Stats</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ad slot -->
+  <section class="mx-auto mt-10 max-w-2xl">
+    <AdSense slot="0000000000" />
+  </section>
+
+  <!-- Features / SEO content -->
+  <section class="mx-auto mt-16 max-w-4xl">
+    <h2 class="text-center text-2xl font-semibold">Why Snip?</h2>
+    <div class="mt-8 grid gap-5 sm:grid-cols-3">
+      <div class="card">
+        <h3 class="text-lg font-semibold">Blazing fast</h3>
+        <p class="mt-2 text-sm text-ink-muted">
+          Redirects run on Cloudflare's global edge network, so your links
+          resolve in milliseconds anywhere in the world.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="text-lg font-semibold">Real analytics</h3>
+        <p class="mt-2 text-sm text-ink-muted">
+          See total clicks, daily trends, top referrers and visitor countries
+          for any link you create.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="text-lg font-semibold">Privacy-friendly</h3>
+        <p class="mt-2 text-sm text-ink-muted">
+          No account required. We store only what's needed to count clicks —
+          never your personal data.
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('shorten-form') as HTMLFormElement;
+  const errorEl = document.getElementById('form-error') as HTMLParagraphElement;
+  const result = document.getElementById('result') as HTMLDivElement;
+  const resultLink = document.getElementById('result-link') as HTMLAnchorElement;
+  const statsLink = document.getElementById('stats-link') as HTMLAnchorElement;
+  const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.classList.add('hidden');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Shortening…';
+
+    const data = new FormData(form);
+    try {
+      const res = await fetch('/api/shorten', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          url: data.get('url'),
+          alias: data.get('alias') || undefined,
+        }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || 'Something went wrong.');
+
+      resultLink.textContent = payload.shortUrl;
+      resultLink.href = payload.shortUrl;
+      statsLink.href = '/stats?code=' + encodeURIComponent(payload.code);
+      result.classList.remove('hidden');
+      form.reset();
+    } catch (err) {
+      errorEl.textContent = err instanceof Error ? err.message : 'Something went wrong.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Shorten URL';
+    }
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(resultLink.textContent || '');
+      const original = copyBtn.textContent;
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => (copyBtn.textContent = original), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  });
+</script>

@@ -1,0 +1,20 @@
+name = "url-shortener"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+# Cloudflare D1 database binding.
+# 1. Create the database:   wrangler d1 create url_shortener
+# 2. Copy the returned database_id into the value below.
+# 3. Initialise the schema: npm run db:init:remote
+[[d1_databases]]
+binding = "DB"
+database_name = "url_shortener"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+# Public site URL used for building short links and canonical/SEO tags.
+PUBLIC_SITE_URL = "https://your-domain.com"
+# Your Google AdSense publisher ID, e.g. "ca-pub-1234567890123456".
+# Leave empty to disable ads (no AdSense script is injected when empty).
+PUBLIC_ADSENSE_CLIENT = ""

@@ -1,0 +1,208 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AdSense from '../components/AdSense.astro';
+
+export const prerender = false;
+
+const initialCode = Astro.url.searchParams.get('code') ?? '';
+---
+
+<Layout
+  title="Link Statistics — Snip"
+  description="Check real-time click statistics for any short link: total clicks, daily trends, top referrers and visitor countries."
+>
+  <section class="mx-auto max-w-2xl text-center">
+    <h1 class="text-3xl font-semibold sm:text-4xl">Link statistics</h1>
+    <p class="mx-auto mt-3 max-w-lg text-ink-muted">
+      Enter a short code or paste a Snip link to see how it's performing.
+    </p>
+  </section>
+
+  <section class="mx-auto mt-8 max-w-2xl">
+    <form id="lookup-form" class="card flex flex-col gap-3 sm:flex-row">
+      <input
+        id="code-input"
+        name="code"
+        type="text"
+        autocomplete="off"
+        placeholder="e.g. ab3Xz or https://your-domain.com/ab3Xz"
+        class="input"
+        value={initialCode}
+        required
+      />
+      <button type="submit" id="lookup-btn" class="btn-primary sm:w-40">
+        View stats
+      </button>
+    </form>
+    <p id="lookup-error" class="mt-3 hidden text-sm text-clay-600" role="alert"></p>
+  </section>
+
+  <!-- Results -->
+  <section id="stats-results" class="mx-auto mt-8 hidden max-w-3xl">
+    <div class="card">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm text-ink-muted">Destination</p>
+          <a
+            id="dest-url"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            class="block truncate font-medium text-clay-500"
+          ></a>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-ink-muted">Total clicks</p>
+          <p id="total-clicks" class="font-serif text-3xl font-semibold text-ink"></p>
+        </div>
+      </div>
+      <p id="created-at" class="mt-3 text-xs text-ink-muted"></p>
+    </div>
+
+    <div class="card mt-4">
+      <h2 class="text-lg font-semibold">Last 7 days</h2>
+      <div id="chart" class="mt-5 flex h-40 items-end gap-2"></div>
+    </div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      <div class="card">
+        <h2 class="text-lg font-semibold">Top referrers</h2>
+        <ul id="referrers" class="mt-3 space-y-2 text-sm"></ul>
+      </div>
+      <div class="card">
+        <h2 class="text-lg font-semibold">Top countries</h2>
+        <ul id="countries" class="mt-3 space-y-2 text-sm"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto mt-10 max-w-3xl">
+    <AdSense slot="0000000001" />
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('lookup-form') as HTMLFormElement;
+  const input = document.getElementById('code-input') as HTMLInputElement;
+  const errorEl = document.getElementById('lookup-error') as HTMLParagraphElement;
+  const btn = document.getElementById('lookup-btn') as HTMLButtonElement;
+  const results = document.getElementById('stats-results') as HTMLElement;
+
+  interface Stats {
+    link: { code: string; url: string; created_at: number; clicks: number };
+    total: number;
+    last7Days: { date: string; count: number }[];
+    topReferrers: { referrer: string; count: number }[];
+    topCountries: { country: string; count: number }[];
+  }
+
+  function parseCode(raw: string): string {
+    const v = raw.trim();
+    if (!v) return '';
+    try {
+      // Allow pasting a full short URL.
+      const u = new URL(v);
+      return u.pathname.replace(/^\/+/, '').split('/')[0];
+    } catch {
+      return v.replace(/^\/+/, '');
+    }
+  }
+
+  function escapeHtml(s: string): string {
+    return s.replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
+    );
+  }
+
+  function renderList(el: HTMLElement, rows: { label: string; count: number }[], total: number) {
+    if (!rows.length) {
+      el.innerHTML = '<li class="text-ink-muted">No data yet.</li>';
+      return;
+    }
+    el.innerHTML = rows
+      .map((r) => {
+        const pct = total ? Math.round((r.count / total) * 100) : 0;
+        return `<li>
+          <div class="flex items-center justify-between">
+            <span class="truncate pr-2">${escapeHtml(r.label)}</span>
+            <span class="text-ink-muted">${r.count}</span>
+          </div>
+          <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-cream-200">
+            <div class="h-full rounded-full bg-clay-400" style="width:${pct}%"></div>
+          </div>
+        </li>`;
+      })
+      .join('');
+  }
+
+  function renderChart(rows: { date: string; count: number }[]) {
+    const chart = document.getElementById('chart') as HTMLElement;
+    const max = Math.max(1, ...rows.map((r) => r.count));
+    chart.innerHTML = rows
+      .map((r) => {
+        const h = Math.round((r.count / max) * 100);
+        const day = new Date(r.date + 'T00:00:00').toLocaleDateString(undefined, {
+          weekday: 'short',
+        });
+        return `<div class="flex flex-1 flex-col items-center gap-1.5">
+          <div class="flex w-full flex-1 items-end">
+            <div class="w-full rounded-t-md bg-clay-400/90" style="height:${Math.max(h, 2)}%" title="${r.count} clicks"></div>
+          </div>
+          <span class="text-[11px] text-ink-muted">${day}</span>
+          <span class="text-xs font-medium text-ink">${r.count}</span>
+        </div>`;
+      })
+      .join('');
+  }
+
+  async function load(code: string) {
+    errorEl.classList.add('hidden');
+    results.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    try {
+      const res = await fetch('/api/stats/' + encodeURIComponent(code));
+      const data = (await res.json()) as Stats & { error?: string };
+      if (!res.ok) throw new Error(data.error || 'Could not load statistics.');
+
+      (document.getElementById('dest-url') as HTMLAnchorElement).textContent = data.link.url;
+      (document.getElementById('dest-url') as HTMLAnchorElement).href = data.link.url;
+      (document.getElementById('total-clicks') as HTMLElement).textContent =
+        data.total.toLocaleString();
+      (document.getElementById('created-at') as HTMLElement).textContent =
+        'Created ' + new Date(data.link.created_at).toLocaleString();
+
+      renderChart(data.last7Days);
+      renderList(
+        document.getElementById('referrers') as HTMLElement,
+        data.topReferrers.map((r) => ({ label: r.referrer, count: r.count })),
+        data.total,
+      );
+      renderList(
+        document.getElementById('countries') as HTMLElement,
+        data.topCountries.map((r) => ({ label: r.country, count: r.count })),
+        data.total,
+      );
+
+      results.classList.remove('hidden');
+    } catch (err) {
+      errorEl.textContent = err instanceof Error ? err.message : 'Something went wrong.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'View stats';
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = parseCode(input.value);
+    if (!code) return;
+    history.replaceState(null, '', '/stats?code=' + encodeURIComponent(code));
+    load(code);
+  });
+
+  // Auto-load if a code was provided in the URL.
+  const initial = parseCode(input.value);
+  if (initial) load(initial);
+</script>

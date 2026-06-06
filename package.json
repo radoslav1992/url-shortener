@@ -1,0 +1,24 @@
+{
+  "name": "url-shortener",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "A fast, SEO-friendly URL shortener built with Astro, deployed on Cloudflare with D1 storage and AdSense monetization.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler pages dev ./dist",
+    "deploy": "astro build && wrangler pages deploy ./dist",
+    "astro": "astro",
+    "db:init": "wrangler d1 execute url_shortener --local --file=./schema.sql",
+    "db:init:remote": "wrangler d1 execute url_shortener --remote --file=./schema.sql"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.5.0",
+    "astro": "^5.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.3",
+    "tailwindcss": "^4.1.3",
+    "wrangler": "^4.10.0"
+  }
+}

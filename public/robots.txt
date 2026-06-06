@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /$
+Allow: /stats
+Allow: /about
+Allow: /privacy
+Allow: /terms
+# Don't let crawlers follow/index individual short links or the API.
+Disallow: /api/
+
+Sitemap: /sitemap.xml
