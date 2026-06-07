@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "wrangler pages dev ./dist",
-    "deploy": "astro build && wrangler pages deploy ./dist",
+    "preview": "astro build && wrangler dev",
+    "deploy": "astro build && wrangler deploy",
     "astro": "astro",
     "db:init": "wrangler d1 execute url_shortener --local --file=./schema.sql",
     "db:init:remote": "wrangler d1 execute url_shortener --remote --file=./schema.sql"
