@@ -39,15 +39,20 @@ export const POST: APIRoute = async ({ request, locals, clientAddress }) => {
   const code = (body.code ?? '').trim();
   if (!code) return json({ error: 'Missing link code.' }, 400);
 
-  const rl = await checkRateLimit(db, `report:${ip}`, REPORT_LIMIT, REPORT_WINDOW_MS);
-  if (!rl.allowed) {
-    return json({ error: 'Too many reports. Please try again later.' }, 429);
-  }
+  try {
+    const rl = await checkRateLimit(db, `report:${ip}`, REPORT_LIMIT, REPORT_WINDOW_MS);
+    if (!rl.allowed) {
+      return json({ error: 'Too many reports. Please try again later.' }, 429);
+    }
 
-  const result = await reportLink(db, code, body.reason ?? null, ip);
-  if (!result.ok) {
-    return json({ error: result.error }, 404);
-  }
+    const result = await reportLink(db, code, body.reason ?? null, ip);
+    if (!result.ok) {
+      return json({ error: result.error }, 404);
+    }
 
-  return json({ ok: true, disabled: result.disabled });
+    return json({ ok: true, disabled: result.disabled });
+  } catch (err) {
+    console.error('report failed:', err);
+    return json({ error: 'Server error while submitting the report.' }, 500);
+  }
 };

@@ -13,19 +13,27 @@ export const GET: APIRoute = async ({ params, locals }) => {
   }
 
   const code = params.code ?? '';
-  const stats = await getStats(db, code);
-  if (!stats) {
-    return new Response(JSON.stringify({ error: 'No link found for that code.' }), {
-      status: 404,
+  try {
+    const stats = await getStats(db, code);
+    if (!stats) {
+      return new Response(JSON.stringify({ error: 'No link found for that code.' }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify(stats), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      },
+    });
+  } catch (err) {
+    console.error('stats failed:', err);
+    return new Response(JSON.stringify({ error: 'Server error loading statistics.' }), {
+      status: 500,
       headers: { 'content-type': 'application/json' },
     });
   }
-
-  return new Response(JSON.stringify(stats), {
-    status: 200,
-    headers: {
-      'content-type': 'application/json',
-      'cache-control': 'no-store',
-    },
-  });
 };
