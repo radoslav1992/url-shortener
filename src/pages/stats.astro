@@ -57,6 +57,9 @@ const initialCode = Astro.url.searchParams.get('code') ?? '';
         </div>
       </div>
       <p id="created-at" class="mt-3 text-xs text-ink-muted"></p>
+      <p class="mt-1 text-xs text-ink-muted">
+        Looks malicious? <a id="report-link" href="/report" class="text-clay-500 underline">Report this link</a>.
+      </p>
     </div>
 
     <div class="card mt-4">
@@ -171,6 +174,8 @@ const initialCode = Astro.url.searchParams.get('code') ?? '';
         data.total.toLocaleString();
       (document.getElementById('created-at') as HTMLElement).textContent =
         'Created ' + new Date(data.link.created_at).toLocaleString();
+      (document.getElementById('report-link') as HTMLAnchorElement).href =
+        '/report?code=' + encodeURIComponent(data.link.code);
 
       renderChart(data.last7Days);
       renderList(

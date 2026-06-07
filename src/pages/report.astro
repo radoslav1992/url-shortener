@@ -1,0 +1,94 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const initialCode = Astro.url.searchParams.get('code') ?? '';
+---
+
+<Layout
+  title="Report a link — Snip"
+  description="Report a Snip short link for spam, phishing, malware or other abuse."
+  noindex
+>
+  <section class="mx-auto max-w-xl">
+    <h1 class="text-3xl font-semibold">Report a link</h1>
+    <p class="mt-3 text-ink-muted">
+      Found a Snip link being used for spam, phishing, malware or other abuse?
+      Let us know and we'll review it. Links that receive multiple reports are
+      disabled automatically.
+    </p>
+
+    <form id="report-form" class="card mt-6 flex flex-col gap-4">
+      <div>
+        <label for="code" class="mb-1.5 block text-sm font-medium text-ink-soft">
+          Short link or code
+        </label>
+        <input
+          id="code"
+          name="code"
+          type="text"
+          autocomplete="off"
+          placeholder="ab3Xz or https://shr7.org/ab3Xz"
+          class="input"
+          value={initialCode}
+          required
+        />
+      </div>
+      <div>
+        <label for="reason" class="mb-1.5 block text-sm font-medium text-ink-soft">
+          What's wrong with it? (optional)
+        </label>
+        <textarea id="reason" name="reason" rows="4" class="input" placeholder="e.g. phishing page impersonating a bank"></textarea>
+      </div>
+      <button type="submit" id="report-btn" class="btn-primary w-full">Submit report</button>
+      <p id="report-msg" class="hidden text-sm" role="status"></p>
+    </form>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('report-form') as HTMLFormElement;
+  const input = document.getElementById('code') as HTMLInputElement;
+  const btn = document.getElementById('report-btn') as HTMLButtonElement;
+  const msg = document.getElementById('report-msg') as HTMLParagraphElement;
+
+  function parseCode(raw: string): string {
+    const v = raw.trim();
+    try {
+      return new URL(v).pathname.replace(/^\/+/, '').split('/')[0];
+    } catch {
+      return v.replace(/^\/+/, '');
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    try {
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          code: parseCode(input.value),
+          reason: (document.getElementById('reason') as HTMLTextAreaElement).value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not submit report.');
+      msg.textContent = data.disabled
+        ? 'Thank you — this link has been disabled.'
+        : 'Thank you — your report has been recorded.';
+      msg.className = 'text-sm text-ink-muted';
+      form.reset();
+    } catch (err) {
+      msg.textContent = err instanceof Error ? err.message : 'Something went wrong.';
+      msg.className = 'text-sm text-clay-600';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit report';
+    }
+  });
+</script>

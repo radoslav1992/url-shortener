@@ -21,6 +21,7 @@ const RESERVED = new Set([
   'about',
   'privacy',
   'terms',
+  'report',
   'admin',
   'favicon.svg',
   'robots.txt',
@@ -86,4 +87,57 @@ export function normalizeUrl(input: string): string | null {
   if (raw.length > 2048) return null;
 
   return parsed.toString();
+}
+
+// Known URL-shortener / redirector hosts. Blocking these prevents "chaining"
+// (shortening a short link) which is a common way to launder malicious URLs
+// past scanners and hide the real destination.
+const SHORTENER_HOSTS = new Set([
+  'bit.ly',
+  'tinyurl.com',
+  't.co',
+  'goo.gl',
+  'ow.ly',
+  'is.gd',
+  'buff.ly',
+  'rebrand.ly',
+  'cutt.ly',
+  'shorturl.at',
+  't.ly',
+  'rb.gy',
+  'tiny.cc',
+  'bl.ink',
+  'lnkd.in',
+  'shorte.st',
+  'adf.ly',
+  'tinyurl.app',
+  'short.io',
+  'snip.ly',
+]);
+
+/**
+ * Screen an already-normalised destination URL for abuse vectors that don't
+ * require a network call: chaining through other shorteners, and pointing back
+ * at our own domain (redirect loops). Returns an error string, or null if OK.
+ */
+export function screenDestination(normalizedUrl: string, selfHost?: string | null): string | null {
+  let host: string;
+  try {
+    host = new URL(normalizedUrl).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return 'Invalid destination URL.';
+  }
+
+  if (selfHost) {
+    const self = selfHost.toLowerCase().replace(/^www\./, '');
+    if (host === self) {
+      return 'You can’t shorten a link that points back to this site.';
+    }
+  }
+
+  if (SHORTENER_HOSTS.has(host)) {
+    return 'Links to other URL shorteners aren’t allowed. Use the original URL.';
+  }
+
+  return null;
 }
