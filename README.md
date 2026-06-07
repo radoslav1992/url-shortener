@@ -1,13 +1,13 @@
 # Snip — URL Shortener
 
 A fast, SEO-friendly URL shortener with built-in click analytics, built with
-**Astro** and deployed on **Cloudflare Pages** with a **D1** database.
+**Astro** and deployed as a **Cloudflare Worker** with a **D1** database.
 Monetized with **Google AdSense**, styled with a warm, claude.ai-inspired theme.
 
 ## Features
 
 - **Shorten links** with optional custom aliases
-- **Edge redirects** via Cloudflare Pages Functions (millisecond latency)
+- **Edge redirects** via a Cloudflare Worker (millisecond latency)
 - **Real-time statistics** page — total clicks, 7-day trend, top referrers & countries
 - **SEO optimized** — server-rendered Astro pages, canonical tags, Open Graph,
   JSON-LD structured data, `sitemap.xml` and `robots.txt`
@@ -16,12 +16,12 @@ Monetized with **Google AdSense**, styled with a warm, claude.ai-inspired theme.
 
 ## Tech stack
 
-| Layer     | Choice                                   |
-| --------- | ---------------------------------------- |
-| UI        | Astro 5 (SSR) + Tailwind CSS 4           |
-| Hosting   | Cloudflare Pages (`@astrojs/cloudflare`) |
-| Storage   | Cloudflare D1 (SQLite at the edge)       |
-| Ads       | Google AdSense                           |
+| Layer     | Choice                                     |
+| --------- | ------------------------------------------ |
+| UI        | Astro 5 (SSR) + Tailwind CSS 4             |
+| Hosting   | Cloudflare Workers (`@astrojs/cloudflare`) |
+| Storage   | Cloudflare D1 (SQLite at the edge)         |
+| Ads       | Google AdSense                             |
 
 ## Project structure
 
@@ -90,8 +90,8 @@ Astro's dev server uses `platformProxy` to provide a local D1 binding.
 npm run deploy
 ```
 
-This builds the site and runs `wrangler pages deploy ./dist`. Alternatively,
-connect the repo to Cloudflare Pages for automatic deploys on push.
+This builds the site and runs `wrangler deploy`. Alternatively, connect the
+repo to Cloudflare Workers Builds for automatic deploys on push (see below).
 
 ## Enabling AdSense
 
@@ -104,26 +104,33 @@ connect the repo to Cloudflare Pages for automatic deploys on push.
 Until a publisher ID is set, ad slots render as neutral placeholders so the
 layout doesn't shift during development.
 
-## Deploying via GitHub (Cloudflare Pages)
+## Deploying via GitHub (Cloudflare Workers Builds)
 
-Connect the repo to Cloudflare Pages for automatic deploys on every push to
-`main`:
+> Cloudflare has merged Pages into Workers, so this project deploys as a
+> **Worker with static assets**. `wrangler.toml` declares the `main` entry
+> (`dist/_worker.js/index.js`) and an `[assets]` binding that serves the built
+> `dist/` directory; any request that doesn't match a static asset falls through
+> to the Astro SSR worker.
 
-1. **Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git**
-   and select this repository.
+Connect the repo to Cloudflare for automatic deploys on every push to `main`:
+
+1. **Cloudflare dashboard → Workers & Pages → Create → Workers → Import a
+   repository** and select this repository.
 2. **Build settings:**
    - Production branch: `main`
-   - Framework preset: `Astro`
    - Build command: `npm run build`
-   - Build output directory: `dist`
+   - Deploy command: `npx wrangler deploy` (the default)
 3. **Bindings & vars** are read automatically from `wrangler.toml` (the D1 `DB`
-   binding, `PUBLIC_SITE_URL`, and the `nodejs_compat` flag) — no manual
-   dashboard config needed. Confirm `DB` appears under *Settings → Functions*
-   after the first build.
+   binding, `ASSETS`, `PUBLIC_SITE_URL`, and the `nodejs_compat` flag) — no
+   manual dashboard config needed. Confirm `DB` appears under *Settings →
+   Bindings* after the first build.
 4. **Create the tables once** via the D1 Console (dashboard → D1 → your
    database → Console) or `npm run db:init:remote`. The site's shorten/redirect
    features error until the schema exists.
-5. **Custom domain:** Pages project → *Custom domains* → add your domain.
+5. **Custom domain:** Worker → *Settings → Domains & Routes* → add your domain.
+
+`public/.assetsignore` keeps the worker source and the Pages-only
+`_routes.json` from being served as public assets.
 
 ## Scaling: D1 vs KV
 
