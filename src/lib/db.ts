@@ -7,6 +7,8 @@ export interface LinkRow {
   url: string;
   created_at: number;
   clicks: number;
+  active: number;
+  creator_ip: string | null;
 }
 
 export interface ClickRow {
@@ -18,7 +20,7 @@ export interface ClickRow {
 /** Look up a single link by its code. */
 export async function getLink(db: D1Database, code: string): Promise<LinkRow | null> {
   const row = await db
-    .prepare('SELECT code, url, created_at, clicks FROM links WHERE code = ?')
+    .prepare('SELECT code, url, created_at, clicks, active, creator_ip FROM links WHERE code = ?')
     .bind(code)
     .first<LinkRow>();
   return row ?? null;
@@ -32,18 +34,19 @@ export async function createLink(
   db: D1Database,
   url: string,
   code?: string,
+  creatorIp?: string | null,
 ): Promise<{ ok: true; code: string } | { ok: false; error: string }> {
   const createdAt = Date.now();
+  const ip = creatorIp ?? null;
+  const insert =
+    'INSERT INTO links (code, url, created_at, clicks, active, creator_ip) VALUES (?, ?, ?, 0, 1, ?)';
 
   if (code) {
     const existing = await getLink(db, code);
     if (existing) {
       return { ok: false, error: 'That custom alias is already taken.' };
     }
-    await db
-      .prepare('INSERT INTO links (code, url, created_at, clicks) VALUES (?, ?, ?, 0)')
-      .bind(code, url, createdAt)
-      .run();
+    await db.prepare(insert).bind(code, url, createdAt, ip).run();
     return { ok: true, code };
   }
 
@@ -51,10 +54,7 @@ export async function createLink(
   for (let attempt = 0; attempt < 6; attempt++) {
     const candidate = generateCode(6 + Math.floor(attempt / 2));
     try {
-      await db
-        .prepare('INSERT INTO links (code, url, created_at, clicks) VALUES (?, ?, ?, 0)')
-        .bind(candidate, url, createdAt)
-        .run();
+      await db.prepare(insert).bind(candidate, url, createdAt, ip).run();
       return { ok: true, code: candidate };
     } catch (err) {
       // UNIQUE constraint violation -> try again with a new code.
@@ -63,6 +63,88 @@ export async function createLink(
     }
   }
   return { ok: false, error: 'Could not generate a unique code, please retry.' };
+}
+
+/**
+ * Fixed-window rate limiter backed by D1. Returns whether the action is
+ * allowed and how many remain in the current window.
+ */
+export async function checkRateLimit(
+  db: D1Database,
+  key: string,
+  limit: number,
+  windowMs: number,
+): Promise<{ allowed: boolean; remaining: number }> {
+  const now = Date.now();
+  const windowStart = Math.floor(now / windowMs) * windowMs;
+  const bucket = `${key}:${windowStart}`;
+
+  const row = await db
+    .prepare(
+      `INSERT INTO rate_limits (bucket, count, window_start) VALUES (?, 1, ?)
+       ON CONFLICT(bucket) DO UPDATE SET count = count + 1
+       RETURNING count`,
+    )
+    .bind(bucket, windowStart)
+    .first<{ count: number }>();
+
+  const count = row?.count ?? 1;
+
+  // Opportunistic cleanup of stale windows (cheap, keeps the table small).
+  if (count === 1) {
+    await db
+      .prepare('DELETE FROM rate_limits WHERE window_start < ?')
+      .bind(now - windowMs * 2)
+      .run();
+  }
+
+  return { allowed: count <= limit, remaining: Math.max(0, limit - count) };
+}
+
+/** Number of times this many reports auto-disables a link. */
+const AUTO_DISABLE_THRESHOLD = 5;
+
+/**
+ * Record an abuse report. Auto-disables the link once it crosses the report
+ * threshold so malicious links are killed quickly without manual review.
+ */
+export async function reportLink(
+  db: D1Database,
+  code: string,
+  reason: string | null,
+  reporterIp: string | null,
+): Promise<{ ok: true; disabled: boolean } | { ok: false; error: string }> {
+  const link = await getLink(db, code);
+  if (!link) return { ok: false, error: 'No link found for that code.' };
+
+  await db
+    .prepare('INSERT INTO reports (code, reason, ts, reporter_ip) VALUES (?, ?, ?, ?)')
+    .bind(code, reason?.slice(0, 500) ?? null, Date.now(), reporterIp)
+    .run();
+
+  const countRow = await db
+    .prepare('SELECT COUNT(*) AS n FROM reports WHERE code = ?')
+    .bind(code)
+    .first<{ n: number }>();
+
+  let disabled = false;
+  if ((countRow?.n ?? 0) >= AUTO_DISABLE_THRESHOLD && link.active === 1) {
+    await setLinkActive(db, code, false);
+    disabled = true;
+  }
+  return { ok: true, disabled };
+}
+
+/** Enable or disable (takedown) a link. */
+export async function setLinkActive(
+  db: D1Database,
+  code: string,
+  active: boolean,
+): Promise<void> {
+  await db
+    .prepare('UPDATE links SET active = ? WHERE code = ?')
+    .bind(active ? 1 : 0, code)
+    .run();
 }
 
 /**

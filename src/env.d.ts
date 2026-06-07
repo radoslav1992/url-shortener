@@ -6,6 +6,10 @@ interface Env {
   DB: D1Database;
   PUBLIC_SITE_URL?: string;
   PUBLIC_ADSENSE_CLIENT?: string;
+  // Abuse prevention
+  PUBLIC_TURNSTILE_SITE_KEY?: string; // public, rendered in the form
+  TURNSTILE_SECRET_KEY?: string; // secret, set via `wrangler secret put`
+  SAFE_BROWSING_API_KEY?: string; // secret, set via `wrangler secret put`
 }
 
 type Runtime = import('@astrojs/cloudflare').Runtime<Env>;

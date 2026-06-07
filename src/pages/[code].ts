@@ -22,6 +22,18 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     return Response.redirect(new URL('/404', request.url).toString(), 302);
   }
 
+  // Disabled (taken down for abuse) — never redirect.
+  if (link.active === 0) {
+    return new Response(
+      '<!doctype html><meta charset="utf-8"><title>Link disabled</title>' +
+        '<body style="font-family:system-ui;max-width:32rem;margin:4rem auto;padding:0 1rem;color:#3d3d3a">' +
+        '<h1 style="color:#c96442">Link disabled</h1>' +
+        '<p>This short link has been disabled because it was reported for abuse.</p>' +
+        '<p><a href="/" style="color:#c96442">Create a new link</a></p></body>',
+      { status: 410, headers: { 'content-type': 'text/html; charset=utf-8' } },
+    );
+  }
+
   // Fire-and-forget analytics so the redirect stays fast.
   const referrer = request.headers.get('referer');
   const country =

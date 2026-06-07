@@ -25,3 +25,11 @@ PUBLIC_SITE_URL = "https://shr7.org"
 # Your Google AdSense publisher ID, e.g. "ca-pub-1234567890123456".
 # Leave empty to disable ads (no AdSense script is injected when empty).
 PUBLIC_ADSENSE_CLIENT = ""
+# Cloudflare Turnstile site key (public). Leave empty to disable the bot check.
+PUBLIC_TURNSTILE_SITE_KEY = ""
+
+# Secrets — DO NOT put these here. Set them with `wrangler secret put NAME`
+# (or in the dashboard → Worker → Settings → Variables and Secrets):
+#   TURNSTILE_SECRET_KEY   — Turnstile secret key (enables server-side bot check)
+#   SAFE_BROWSING_API_KEY  — Google Safe Browsing API key (enables malware scan)
+# When a secret is absent, that check is skipped so the app still runs.
