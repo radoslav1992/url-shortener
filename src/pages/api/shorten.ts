@@ -45,70 +45,80 @@ export const POST: APIRoute = async ({ request, locals, clientAddress }) => {
   }
 
   // 1. Bot protection — verify Turnstile (skipped if no secret configured).
-  const turnstile = await verifyTurnstile(body.turnstileToken, env?.TURNSTILE_SECRET_KEY, ip);
-  if (!turnstile.success) {
-    return json({ error: 'Bot check failed. Please refresh and try again.' }, 403);
-  }
-
-  // 2. Rate limit per IP.
-  const rl = await checkRateLimit(db, `create:${ip}`, RATE_LIMIT, RATE_WINDOW_MS);
-  if (!rl.allowed) {
-    return json(
-      { error: 'You’re creating links too quickly. Please try again later.' },
-      429,
-    );
-  }
-
-  // 3. Validate + normalise the URL.
-  const url = normalizeUrl(body.url ?? '');
-  if (!url) {
-    return json({ error: 'Please enter a valid http(s) URL.' }, 400);
-  }
-
-  // 4. Screen for chaining / self-loops (no network needed).
-  const selfHost = (() => {
-    try {
-      return new URL(env?.PUBLIC_SITE_URL || request.url).hostname;
-    } catch {
-      return null;
+  try {
+    const turnstile = await verifyTurnstile(body.turnstileToken, env?.TURNSTILE_SECRET_KEY, ip);
+    if (!turnstile.success) {
+      return json({ error: 'Bot check failed. Please refresh and try again.' }, 403);
     }
-  })();
-  const screenError = screenDestination(url, selfHost);
-  if (screenError) {
-    return json({ error: screenError }, 400);
-  }
 
-  // 5. Malware / phishing scan via Google Safe Browsing (skipped if no key).
-  const safety = await checkUrlSafety(url, env?.SAFE_BROWSING_API_KEY);
-  if (!safety.safe) {
-    return json(
-      { error: 'This URL was flagged as unsafe and can’t be shortened.' },
-      422,
-    );
-  }
-
-  // 6. Validate custom alias.
-  let alias = (body.alias ?? '').trim();
-  if (alias) {
-    if (isReserved(alias)) {
-      return json({ error: 'That alias is reserved, please pick another.' }, 400);
-    }
-    if (!isValidCode(alias)) {
+    // 2. Rate limit per IP.
+    const rl = await checkRateLimit(db, `create:${ip}`, RATE_LIMIT, RATE_WINDOW_MS);
+    if (!rl.allowed) {
       return json(
-        { error: 'Alias must be 3–32 letters, numbers, hyphens or underscores.' },
-        400,
+        { error: 'You’re creating links too quickly. Please try again later.' },
+        429,
       );
     }
+
+    // 3. Validate + normalise the URL.
+    const url = normalizeUrl(body.url ?? '');
+    if (!url) {
+      return json({ error: 'Please enter a valid http(s) URL.' }, 400);
+    }
+
+    // 4. Screen for chaining / self-loops (no network needed).
+    const selfHost = (() => {
+      try {
+        return new URL(env?.PUBLIC_SITE_URL || request.url).hostname;
+      } catch {
+        return null;
+      }
+    })();
+    const screenError = screenDestination(url, selfHost);
+    if (screenError) {
+      return json({ error: screenError }, 400);
+    }
+
+    // 5. Malware / phishing scan via Google Safe Browsing (skipped if no key).
+    const safety = await checkUrlSafety(url, env?.SAFE_BROWSING_API_KEY);
+    if (!safety.safe) {
+      return json(
+        { error: 'This URL was flagged as unsafe and can’t be shortened.' },
+        422,
+      );
+    }
+
+    // 6. Validate custom alias.
+    const alias = (body.alias ?? '').trim();
+    if (alias) {
+      if (isReserved(alias)) {
+        return json({ error: 'That alias is reserved, please pick another.' }, 400);
+      }
+      if (!isValidCode(alias)) {
+        return json(
+          { error: 'Alias must be 3–32 letters, numbers, hyphens or underscores.' },
+          400,
+        );
+      }
+    }
+
+    // 7. Create.
+    const result = await createLink(db, url, alias || undefined, ip);
+    if (!result.ok) {
+      return json({ error: result.error }, 409);
+    }
+
+    const origin = env?.PUBLIC_SITE_URL || new URL(request.url).origin;
+    const shortUrl = new URL('/' + result.code, origin).toString();
+
+    return json({ code: result.code, shortUrl, url });
+  } catch (err) {
+    // Never return an empty body — the client calls res.json(). A missing DB
+    // schema (e.g. tables not yet migrated) lands here.
+    console.error('shorten failed:', err);
+    return json(
+      { error: 'Server error while creating the link. Please try again later.' },
+      500,
+    );
   }
-
-  // 7. Create.
-  const result = await createLink(db, url, alias || undefined, ip);
-  if (!result.ok) {
-    return json({ error: result.error }, 409);
-  }
-
-  const origin = env?.PUBLIC_SITE_URL || new URL(request.url).origin;
-  const shortUrl = new URL('/' + result.code, origin).toString();
-
-  return json({ code: result.code, shortUrl, url });
 };
