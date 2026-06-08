@@ -9,6 +9,27 @@ const turnstileSiteKey =
   import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ||
   '';
 
+// Cross-promoted free tools. Logos load each site's favicon at runtime (with a
+// letter-tile fallback), so no third-party assets are bundled.
+const tools = [
+  {
+    name: '10 Minute Mailbox',
+    domain: '10minmailbox.com',
+    url: 'https://10minmailbox.com/',
+    description:
+      'Free temporary email. Get a disposable inbox that expires automatically, so you can sign up anywhere without giving out your real address or getting spam.',
+    accent: '#2f8f6b',
+  },
+  {
+    name: 'Whisper STT',
+    domain: 'whisperstt.com',
+    url: 'https://whisperstt.com/',
+    description:
+      'Free speech-to-text. Turn audio and voice recordings into accurate text in seconds with Whisper-powered transcription.',
+    accent: '#5b6ee1',
+  },
+];
+
 // Question/answer content drives both the visible FAQ and the FAQPage schema —
 // concise, factual answers are exactly what generative engines cite.
 const faqs = [
@@ -158,6 +179,63 @@ const structuredData = [
           <a id="stats-link" href="#" class="btn-ghost">Stats</a>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- More free tools -->
+  <section class="mx-auto mt-12 max-w-2xl">
+    <div class="flex items-center gap-3">
+      <h2 class="text-lg font-semibold">More free tools</h2>
+      <span class="h-px flex-1 bg-line"></span>
+    </div>
+    <div class="mt-5 grid gap-4 sm:grid-cols-2">
+      {
+        tools.map((t) => (
+          <a
+            href={t.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="card group flex items-start gap-4 transition-colors hover:bg-cream-100"
+          >
+            <span
+              class="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-base font-semibold text-white"
+              style={`background:${t.accent}`}
+            >
+              <span aria-hidden="true">{t.name.charAt(0)}</span>
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${t.domain}&sz=128`}
+                alt={`${t.name} logo`}
+                width="44"
+                height="44"
+                loading="lazy"
+                class="absolute inset-0 h-full w-full bg-white object-contain p-1.5"
+                onerror="this.remove()"
+              />
+            </span>
+            <span class="min-w-0">
+              <span class="flex items-center gap-1 font-medium text-ink">
+                {t.name}
+                <svg
+                  class="text-ink-muted opacity-0 transition-opacity group-hover:opacity-100"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M7 17 17 7" />
+                  <path d="M7 7h10v10" />
+                </svg>
+              </span>
+              <p class="mt-1 text-sm text-ink-muted">{t.description}</p>
+              <span class="mt-2 inline-block text-xs text-clay-500">{t.domain}</span>
+            </span>
+          </a>
+        ))
+      }
     </div>
   </section>
 
