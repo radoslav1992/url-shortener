@@ -1,4 +1,4 @@
-# Snip — URL Shortener
+# SHR7 — URL Shortener
 
 A fast, SEO-friendly URL shortener with built-in click analytics, built with
 **Astro** and deployed as a **Cloudflare Worker** with a **D1** database.
@@ -72,7 +72,7 @@ npm run db:init:remote   # production database
 Set these in `wrangler.toml` `[vars]` (or the Cloudflare dashboard). For local
 dev, copy `.env.example` to `.dev.vars`:
 
-- `PUBLIC_SITE_URL` — your production URL, e.g. `https://snip.example.com`
+- `PUBLIC_SITE_URL` — your production URL, e.g. `https://shr7.org`
 - `PUBLIC_ADSENSE_CLIENT` — your AdSense publisher ID, e.g. `ca-pub-1234…`
   (leave empty to disable ads)
 
