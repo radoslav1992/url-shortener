@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34" width="34" height="34" role="img" aria-label="Whisper STT">
+  <circle cx="17" cy="17" r="11" fill="none" stroke="rgba(40,36,28,0.12)" stroke-width="3"/>
+  <circle cx="17" cy="17" r="11" fill="none" stroke="#d97757" stroke-width="3"
+          stroke-linecap="round" stroke-dasharray="20.73 69.12" transform="rotate(-90 17 17)"/>
+  <g transform="translate(8 8) scale(0.75)" fill="none" stroke="#d97757"
+     stroke-width="2.67" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="3" width="6" height="11" rx="3"/>
+    <path d="M5 11a7 7 0 0 0 14 0"/>
+    <path d="M12 18v3"/>
+    <path d="M8.5 21h7"/>
+  </g>
+</svg>

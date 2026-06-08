@@ -9,8 +9,7 @@ const turnstileSiteKey =
   import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ||
   '';
 
-// Cross-promoted free tools. Logos load each site's favicon at runtime (with a
-// letter-tile fallback), so no third-party assets are bundled.
+// Cross-promoted free tools. Each card uses the tool's own logo from /public.
 const tools = [
   {
     name: '10 Minute Mailbox',
@@ -18,7 +17,7 @@ const tools = [
     url: 'https://10minmailbox.com/',
     description:
       'Free temporary email. Get a disposable inbox that expires automatically, so you can sign up anywhere without giving out your real address or getting spam.',
-    accent: '#2f8f6b',
+    logo: '/logo.svg',
   },
   {
     name: 'Whisper STT',
@@ -26,7 +25,7 @@ const tools = [
     url: 'https://whisperstt.com/',
     description:
       'Free speech-to-text. Turn audio and voice recordings into accurate text in seconds with Whisper-powered transcription.',
-    accent: '#5b6ee1',
+    logo: '/whisperstt.svg',
   },
 ];
 
@@ -197,19 +196,14 @@ const structuredData = [
             rel="noopener noreferrer"
             class="card group flex items-start gap-4 transition-colors hover:bg-cream-100"
           >
-            <span
-              class="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-base font-semibold text-white"
-              style={`background:${t.accent}`}
-            >
-              <span aria-hidden="true">{t.name.charAt(0)}</span>
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-cream-100">
               <img
-                src={`https://www.google.com/s2/favicons?domain=${t.domain}&sz=128`}
+                src={t.logo}
                 alt={`${t.name} logo`}
-                width="44"
-                height="44"
+                width="32"
+                height="32"
                 loading="lazy"
-                class="absolute inset-0 h-full w-full bg-white object-contain p-1.5"
-                onerror="this.remove()"
+                class="h-8 w-8"
               />
             </span>
             <span class="min-w-0">
