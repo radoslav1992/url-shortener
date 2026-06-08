@@ -27,7 +27,7 @@ export async function checkUrlSafety(
   }
 
   const body = {
-    client: { clientId: 'snip-url-shortener', clientVersion: '1.0.0' },
+    client: { clientId: 'shr7-url-shortener', clientVersion: '1.0.0' },
     threatInfo: {
       threatTypes: [
         'MALWARE',
