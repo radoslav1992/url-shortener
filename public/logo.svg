@@ -1,0 +1,13 @@
+<svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="10 Min Mailbox">
+  <!-- light track ring -->
+  <circle cx="36" cy="36" r="30" stroke="#ddd6c9" stroke-width="3"/>
+  <!-- coral arc: ~30% of the ring, starting at the top -->
+  <circle cx="36" cy="36" r="30" stroke="#d97757" stroke-width="3" stroke-linecap="round"
+          stroke-dasharray="56.55 188.5" transform="rotate(-90 36 36)"/>
+  <!-- coral envelope, centred -->
+  <g transform="translate(24 24)" stroke="#d97757" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2.5" y="5" width="19" height="14" rx="2.5"/>
+    <path d="M3.5 7.5l8.5 5.5 8.5-5.5"/>
+  </g>
+</svg>
