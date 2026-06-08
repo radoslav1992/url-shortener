@@ -8,25 +8,80 @@ interface Props {
   description?: string;
   noindex?: boolean;
   ogImage?: string;
+  /** Override the document type for Open Graph (e.g. "article"). */
+  ogType?: string;
+  /** Extra JSON-LD object(s) merged into the structured-data graph. */
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
+const SITE_NAME = 'SHR7';
 const {
   title = 'SHR7 — Free URL Shortener with Click Analytics',
-  description = 'Shorten long links in one click and track real-time statistics. Fast, free, and privacy-friendly URL shortener built on Cloudflare.',
+  description = 'Shorten long links in one click and track real-time click statistics. SHR7 is a fast, free, privacy-friendly URL shortener running on Cloudflare’s global edge network.',
   noindex = false,
-  ogImage,
+  ogImage = '/og.svg',
+  ogType = 'website',
+  structuredData,
 } = Astro.props;
 
-const siteUrl =
-  Astro.locals.runtime?.env?.PUBLIC_SITE_URL || import.meta.env.PUBLIC_SITE_URL || Astro.site?.toString() || Astro.url.origin;
-const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+const siteUrl = (
+  Astro.locals.runtime?.env?.PUBLIC_SITE_URL ||
+  import.meta.env.PUBLIC_SITE_URL ||
+  Astro.site?.toString() ||
+  Astro.url.origin
+).replace(/\/$/, '');
+// Use the trailing-slash form so canonical URLs match the sitemap entries.
+const path = Astro.url.pathname;
+const normalizedPath = path.endsWith('/') ? path : `${path}/`;
+const canonical = `${siteUrl}${normalizedPath}`;
 const adsenseClient =
   Astro.locals.runtime?.env?.PUBLIC_ADSENSE_CLIENT || import.meta.env.PUBLIC_ADSENSE_CLIENT || '';
 const gaId =
   Astro.locals.runtime?.env?.PUBLIC_GA_MEASUREMENT_ID ||
   import.meta.env.PUBLIC_GA_MEASUREMENT_ID ||
   'G-Q70SZ3S9JM';
-const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
+const ogImageUrl = ogImage ? new URL(ogImage, siteUrl + '/').toString() : undefined;
+
+const robots = noindex
+  ? 'noindex, nofollow'
+  : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+
+// Sitewide structured-data graph: helps both classic search (rich results) and
+// generative engines (clear, machine-readable facts about the site).
+const baseGraph: Record<string, unknown>[] = [
+  {
+    '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
+    name: SITE_NAME,
+    url: `${siteUrl}/`,
+    description,
+    publisher: { '@id': `${siteUrl}/#org` },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl}/stats?code={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  },
+  {
+    '@type': 'Organization',
+    '@id': `${siteUrl}/#org`,
+    name: SITE_NAME,
+    url: `${siteUrl}/`,
+    logo: { '@type': 'ImageObject', url: `${siteUrl}/favicon.svg` },
+  },
+];
+const extra = structuredData
+  ? Array.isArray(structuredData)
+    ? structuredData
+    : [structuredData]
+  : [];
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [...baseGraph, ...extra],
+};
 ---
 
 <!doctype html>
@@ -35,6 +90,8 @@ const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#d97757" />
+    <meta name="generator" content={Astro.generator} />
 
     {
       gaId && (
@@ -55,34 +112,30 @@ const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
 
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="author" content={SITE_NAME} />
     <link rel="canonical" href={canonical} />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="robots" content={robots} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
     <!-- Open Graph / social -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="SHR7" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="en_US" />
     {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    {ogImageUrl && <meta property="og:image:alt" content={`${SITE_NAME} — URL shortener`} />}
     <meta name="twitter:card" content={ogImageUrl ? 'summary_large_image' : 'summary'} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    {ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
 
-    <!-- Structured data for richer search results -->
-    <script
-      type="application/ld+json"
-      set:html={JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebApplication',
-        name: 'SHR7',
-        applicationCategory: 'UtilitiesApplication',
-        operatingSystem: 'Any',
-        url: siteUrl,
-        description,
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-      })}
-    />
+    <!-- Structured data for rich results + generative engines -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+    <!-- Per-page extra head content (e.g. additional JSON-LD) -->
+    <slot name="head" />
 
     {
       adsenseClient && (
