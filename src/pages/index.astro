@@ -8,9 +8,71 @@ const turnstileSiteKey =
   Astro.locals.runtime?.env?.PUBLIC_TURNSTILE_SITE_KEY ||
   import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ||
   '';
+
+// Question/answer content drives both the visible FAQ and the FAQPage schema —
+// concise, factual answers are exactly what generative engines cite.
+const faqs = [
+  {
+    q: 'What is SHR7?',
+    a: 'SHR7 is a free URL shortener that turns long links into short, shareable ones and tracks real-time click statistics. It runs on Cloudflare’s global edge network, so links redirect in milliseconds worldwide.',
+  },
+  {
+    q: 'Is SHR7 free to use?',
+    a: 'Yes. Shortening links and viewing their statistics is completely free, and no account or sign-up is required.',
+  },
+  {
+    q: 'How do I track clicks on a short link?',
+    a: 'Open the Statistics page and enter your short code (or paste the full short link) to see total clicks, a 7-day trend, top referrers and visitor countries.',
+  },
+  {
+    q: 'Can I choose a custom short link?',
+    a: 'Yes. When creating a link you can set a custom alias of 3–32 letters, numbers, hyphens or underscores, as long as it isn’t already taken.',
+  },
+  {
+    q: 'How long do SHR7 links last?',
+    a: 'Short links stay active indefinitely unless they are reported and disabled for abuse such as spam, phishing or malware.',
+  },
+];
+
+const structuredData = [
+  {
+    '@type': 'WebApplication',
+    name: 'SHR7',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Any',
+    url: 'https://shr7.org/',
+    description:
+      'Free URL shortener with real-time click analytics, built on Cloudflare.',
+    featureList: [
+      'Shorten long URLs',
+      'Custom aliases',
+      'Real-time click statistics',
+      'Top referrers and countries',
+      'Edge redirects',
+    ],
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  },
+  {
+    '@type': 'HowTo',
+    name: 'How to shorten a URL with SHR7',
+    step: [
+      { '@type': 'HowToStep', name: 'Paste your URL', text: 'Paste a long URL into the box on the SHR7 home page.' },
+      { '@type': 'HowToStep', name: 'Shorten it', text: 'Click “Shorten URL” to get a short link instantly.' },
+      { '@type': 'HowToStep', name: 'Share and track', text: 'Share the short link, then check its statistics anytime.' },
+    ],
+  },
+  {
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
 ---
 
-<Layout>
+<Layout structuredData={structuredData}>
   <section class="mx-auto max-w-2xl text-center">
     <p class="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-ink-muted">
       <span class="h-1.5 w-1.5 rounded-full bg-clay-400"></span>
@@ -140,6 +202,23 @@ const turnstileSiteKey =
         </p>
       </div>
     </div>
+  </section>
+
+  <!-- FAQ — concise answers for both readers and generative search engines -->
+  <section class="mx-auto mt-16 max-w-3xl">
+    <h2 class="text-center text-2xl font-semibold">Frequently asked questions</h2>
+    <dl class="mt-8 space-y-3">
+      {
+        faqs.map((f) => (
+          <details class="card group">
+            <summary class="cursor-pointer list-none font-medium text-ink marker:hidden">
+              <dt class="inline">{f.q}</dt>
+            </summary>
+            <dd class="mt-3 text-sm text-ink-muted">{f.a}</dd>
+          </details>
+        ))
+      }
+    </dl>
   </section>
 </Layout>
 

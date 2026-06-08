@@ -1,0 +1,23 @@
+# SHR7
+
+> SHR7 is a free, privacy-friendly URL shortener with real-time click analytics, running on Cloudflare's global edge network. Shorten long links (optionally with a custom alias) and track clicks, daily trends, top referrers and visitor countries — no account required.
+
+## Key facts
+- Free to use; no sign-up or account required.
+- Custom aliases supported (3–32 letters, numbers, hyphens or underscores).
+- Real-time statistics per link: total clicks, 7-day trend, top referrers, top countries.
+- Edge redirects with millisecond latency via Cloudflare Workers.
+- Abuse protection: malicious-URL scanning, rate limiting, and link reporting/takedown.
+
+## How to shorten a URL
+1. Paste a long URL on the home page.
+2. Click "Shorten URL" to get a short link instantly.
+3. Share the link, then check its statistics anytime on the Statistics page.
+
+## Pages
+- [Home / shorten a link](https://shr7.org/): Create a short link.
+- [Statistics](https://shr7.org/stats): Look up real-time click statistics for any short code.
+- [About](https://shr7.org/about): What SHR7 is and how it works.
+- [Privacy](https://shr7.org/privacy): What data SHR7 collects.
+- [Terms](https://shr7.org/terms): Acceptable-use terms.
+- [Report abuse](https://shr7.org/report): Report a malicious short link.
