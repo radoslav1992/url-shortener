@@ -11,7 +11,7 @@ interface Props {
 }
 
 const {
-  title = 'Snip — Free URL Shortener with Click Analytics',
+  title = 'SHR7 — Free URL Shortener with Click Analytics',
   description = 'Shorten long links in one click and track real-time statistics. Fast, free, and privacy-friendly URL shortener built on Cloudflare.',
   noindex = false,
   ogImage,
@@ -42,7 +42,7 @@ const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content="Snip" />
+    <meta property="og:site_name" content="SHR7" />
     {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
     <meta name="twitter:card" content={ogImageUrl ? 'summary_large_image' : 'summary'} />
     <meta name="twitter:title" content={title} />
@@ -54,7 +54,7 @@ const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
       set:html={JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
-        name: 'Snip',
+        name: 'SHR7',
         applicationCategory: 'UtilitiesApplication',
         operatingSystem: 'Any',
         url: siteUrl,
