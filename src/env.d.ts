@@ -6,6 +6,7 @@ interface Env {
   DB: D1Database;
   PUBLIC_SITE_URL?: string;
   PUBLIC_ADSENSE_CLIENT?: string;
+  PUBLIC_GA_MEASUREMENT_ID?: string; // Google Analytics 4 measurement ID
   // Abuse prevention
   PUBLIC_TURNSTILE_SITE_KEY?: string; // public, rendered in the form
   TURNSTILE_SECRET_KEY?: string; // secret, set via `wrangler secret put`

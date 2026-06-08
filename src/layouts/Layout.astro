@@ -22,6 +22,10 @@ const siteUrl =
 const canonical = new URL(Astro.url.pathname, siteUrl).toString();
 const adsenseClient =
   Astro.locals.runtime?.env?.PUBLIC_ADSENSE_CLIENT || import.meta.env.PUBLIC_ADSENSE_CLIENT || '';
+const gaId =
+  Astro.locals.runtime?.env?.PUBLIC_GA_MEASUREMENT_ID ||
+  import.meta.env.PUBLIC_GA_MEASUREMENT_ID ||
+  'G-Q70SZ3S9JM';
 const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
 ---
 
@@ -31,6 +35,23 @@ const ogImageUrl = ogImage ? new URL(ogImage, siteUrl).toString() : undefined;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    {
+      gaId && (
+        <>
+          {/* Google tag (gtag.js) */}
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} is:inline />
+          <script is:inline define:vars={{ gaId }}>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+              dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', gaId);
+          </script>
+        </>
+      )
+    }
 
     <title>{title}</title>
     <meta name="description" content={description} />
